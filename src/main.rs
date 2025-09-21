@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 use serde::{
@@ -103,6 +105,35 @@ fn query_anthropic(prompt: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn get_coommand_output(cmd: &Vec<&str>) -> anyhow::Result<String> {
+    let output = std::process::Command::new(&cmd[0])
+        .args(&cmd[1..])
+        .output()
+        .map_err(|e| anyhow::anyhow!("Failed to execute command {:?}: {}", cmd, e))?;
+    
+    if !output.status.success() {
+        return Err(anyhow::anyhow!(
+            "Git command failed with status: {}",
+            output.status
+        ));
+    }
+
+    let stdout = String::from_utf8(output.stdout)
+        .map_err(|e| anyhow::anyhow!("Failed to parse git output: {}", e))?;
+
+    Ok(stdout)
+}
+
+fn get_commit_msg_prompt(path: &PathBuf) -> String {
+    let path_str = path.to_string_lossy();
+    let command = vec!["git", "diff", "--cached", &path_str];
+    format!(
+        "Generate a concise and descriptive git commit message for the following changes in {}:\n\n{}",
+        path_str,
+        get_coommand_output(&command).unwrap_or_else(|_| "No changes found.".to_string())
+    )
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
@@ -111,8 +142,8 @@ fn main() -> anyhow::Result<()> {
             list_anthropic_models()
         }
         Some(Commands::Query { input }) => {
-            let default_prompt = "Explain the theory of relativity in simple terms.";
-            query_anthropic(input.as_deref().unwrap_or(default_prompt))
+            let default_prompt = get_commit_msg_prompt(&PathBuf::from("."));
+            query_anthropic(input.as_deref().unwrap_or(&default_prompt))
         }
         None => {
             Err(anyhow::anyhow!("No command provided. Use --help for usage information."))
