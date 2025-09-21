@@ -21,9 +21,13 @@ struct Cli {
 enum Commands {
     ListModels,
     Query {
-        /// Input type: diff (default), cached, or file
+        /// Input type: prompt to use; if empty, using a generic prompt using git diff --cached
         #[arg(short, long)]
         input: Option<String>,
+
+        /// Model to use (default: claude-3-5-sonnet-latest)
+        #[arg(short, long, default_value = "claude-3-5-sonnet-latest")]
+        model: Option<String>,
     },
 }
 
@@ -72,9 +76,7 @@ fn list_anthropic_models() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn query_anthropic(prompt: &str) -> anyhow::Result<()> {
-    let model = "claude-3-5-sonnet-latest";
-
+fn query_anthropic(model: &str, prompt: &str) -> anyhow::Result<()> {
     let query = json!({
             "model": model,
             "temperature": 0.0,
@@ -141,9 +143,9 @@ fn main() -> anyhow::Result<()> {
         Some(Commands::ListModels) => {
             list_anthropic_models()
         }
-        Some(Commands::Query { input }) => {
+        Some(Commands::Query { model, input }) => {
             let default_prompt = get_commit_msg_prompt(&PathBuf::from("."));
-            query_anthropic(input.as_deref().unwrap_or(&default_prompt))
+            query_anthropic(model.as_deref().unwrap(), input.as_deref().unwrap_or(&default_prompt))
         }
         None => {
             Err(anyhow::anyhow!("No command provided. Use --help for usage information."))
