@@ -107,7 +107,7 @@ fn query_anthropic(model: &str, prompt: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn get_coommand_output(cmd: &Vec<&str>) -> anyhow::Result<String> {
+fn get_command_output(cmd: &Vec<&str>) -> anyhow::Result<String> {
     let output = std::process::Command::new(&cmd[0])
         .args(&cmd[1..])
         .output()
@@ -132,7 +132,7 @@ fn get_commit_msg_prompt(path: &PathBuf) -> String {
     format!(
         "Generate a concise and descriptive git commit message for the following changes in {}:\n\n{}",
         path_str,
-        get_coommand_output(&command).unwrap_or_else(|_| "No changes found.".to_string())
+        get_command_output(&command).unwrap_or_else(|_| "No changes found.".to_string())
     )
 }
 
