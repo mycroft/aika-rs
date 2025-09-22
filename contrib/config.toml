@@ -1,3 +1,10 @@
+[inputs]
+[inputs.git-diff]
+command = "git diff"
+
+[input.git-diff-cached]
+command = "git diff --cached"
+
 [providers]
 [providers.claude]
-model = "laude-sonnet-4-20250514"
+model = "claude-sonnet-3-latest"

@@ -9,10 +9,15 @@ pub struct Provider {
     pub model: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Input {
+    pub command: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub providers: HashMap<String, Provider>,
+    pub inputs: HashMap<String, Input>,
 }
 
 pub fn load_config(config_file: &str) -> Result<Config> {
@@ -48,5 +53,13 @@ pub fn get_default_config() -> Config {
         },
     );
 
-    Config { providers }
+    let mut inputs = HashMap::new();
+    inputs.insert(
+        "git-diff-cached".to_string(),
+        Input {
+            command: "git diff --cached".to_string(),
+        },
+    );
+
+    Config { providers, inputs }
 }

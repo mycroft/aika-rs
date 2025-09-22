@@ -31,7 +31,7 @@ enum Commands {
     ListModels,
     Query {
         /// Input type: prompt to use; if empty, using a generic prompt using git diff --cached
-        #[arg(short, long)]
+        #[arg(short, long, default_value = "git-diff-cached")]
         input: Option<String>,
 
         /// Model to use (default: claude-3-5-sonnet-latest)
@@ -40,9 +40,10 @@ enum Commands {
     },
 }
 
-fn get_command_output(cmd: &Vec<&str>) -> anyhow::Result<String> {
+fn get_command_output(cmd: &Vec<&str>, path: &PathBuf) -> anyhow::Result<String> {
     let output = std::process::Command::new(&cmd[0])
         .args(&cmd[1..])
+        .current_dir(path)
         .output()
         .map_err(|e| anyhow::anyhow!("Failed to execute command {:?}: {}", cmd, e))?;
     
@@ -59,13 +60,15 @@ fn get_command_output(cmd: &Vec<&str>) -> anyhow::Result<String> {
     Ok(stdout)
 }
 
-fn get_commit_msg_prompt(path: &PathBuf) -> String {
-    let path_str = path.to_string_lossy();
-    let command = vec!["git", "diff", "--cached", &path_str];
+fn get_commit_msg_prompt(command: &str, path: &PathBuf) -> String {
+    let path_str: std::borrow::Cow<'_, str> = path.to_string_lossy();
+
+    let mut command = command.split_whitespace().collect::<Vec<&str>>();
+    command.push(&path_str);
+
     format!(
-        "Generate a concise and descriptive git commit message for the following changes in {}:\n\n{}",
-        path_str,
-        get_command_output(&command).unwrap_or_else(|_| "No changes found.".to_string())
+        "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{}```\n",
+        get_command_output(&command, path).unwrap_or_else(|_| "No changes found.".to_string())
     )
 }
 
@@ -85,12 +88,19 @@ fn main() -> anyhow::Result<()> {
             list_anthropic_models()
         }
         Some(Commands::Query { model, input }) => {
+            let default_input = "git diff --cached";
             let default_model = "claude-3-5-sonnet-latest";
-            let default_prompt = get_commit_msg_prompt(&PathBuf::from("."));
+
+            let command = config.inputs.get(&input.clone().unwrap())
+                .map(|input| input.command.clone())
+                .unwrap_or_else(|| default_input.to_string());
+            
+            let prompt = get_commit_msg_prompt(&command, &PathBuf::from("."));
+
             query_anthropic(
                 model.as_deref().unwrap_or(
                 config.providers.get("claude").unwrap_or(&Provider{model: default_model.to_string()}).model.as_str()),
-                input.as_deref().unwrap_or(&default_prompt),
+                &prompt,
             )
         }
         None => {
