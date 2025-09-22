@@ -28,14 +28,25 @@ pub fn load_config(config_file: &str) -> Result<Config> {
     };
 
     if !config_path.exists() {
-        return Err(anyhow::anyhow!(
-            "Config file not found at {}",
-            config_path.display()
-        ));
+        // Returning default config if file does not exist
+        eprintln!("Config file not found at {:?}, using default configuration.", config_path);
+        return Ok(get_default_config());
     }
 
     let config_content = std::fs::read_to_string(&config_path)?;
     let config: Config = toml::from_str(&config_content)?;
 
     Ok(config)
+}
+
+pub fn get_default_config() -> Config {
+    let mut providers = HashMap::new();
+    providers.insert(
+        "claude".to_string(),
+        Provider {
+            model: "claude-3-5-sonnet-latest".to_string(),
+        },
+    );
+
+    Config { providers }
 }
