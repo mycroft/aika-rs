@@ -1,0 +1,3 @@
+[providers]
+[providers.claude]
+model = "laude-sonnet-4-20250514"

@@ -2,6 +2,12 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+pub mod config;
+use crate::config::{    
+    load_config,
+    Provider,
+};
+
 pub mod claude;
 use crate::claude::{
     list_anthropic_models,
@@ -15,6 +21,9 @@ use crate::claude::{
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
+
+    #[arg(short, long)]
+    config: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -63,13 +72,26 @@ fn get_commit_msg_prompt(path: &PathBuf) -> String {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
+    let config = match load_config(cli.config.as_deref().unwrap_or("")) {
+        Ok(config)  => config,
+        Err(e) => {
+            eprintln!("Warning: Failed to load config file: {}", e);
+            return Err(e);
+        }
+    };
+
     match &cli.command {
         Some(Commands::ListModels) => {
             list_anthropic_models()
         }
         Some(Commands::Query { model, input }) => {
+            let default_model = "claude-3-5-sonnet-latest";
             let default_prompt = get_commit_msg_prompt(&PathBuf::from("."));
-            query_anthropic(model.as_deref().unwrap(), input.as_deref().unwrap_or(&default_prompt))
+            query_anthropic(
+                model.as_deref().unwrap_or(
+                config.providers.get("claude").unwrap_or(&Provider{model: default_model.to_string()}).model.as_str()),
+                input.as_deref().unwrap_or(&default_prompt),
+            )
         }
         None => {
             Err(anyhow::anyhow!("No command provided. Use --help for usage information."))
