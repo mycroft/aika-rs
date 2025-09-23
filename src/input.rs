@@ -1,5 +1,9 @@
 use std::path::PathBuf;
 
+pub enum Input {
+    Command(Vec<String>),
+}
+
 pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyhow::Result<String> {
     if debug {
         eprintln!("Executing command: {:?}", cmd);
@@ -26,4 +30,16 @@ pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyho
     }
 
     Ok(stdout)
+}
+
+pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<String> {
+    match input {
+        Input::Command(cmd) => {
+            get_command_output(&cmd.iter().map(|s| s.as_str()).collect(), path, debug)
+        }
+    }
+}
+
+pub fn from_config(input: &crate::config::Input) -> Input {
+    Input::Command(input.command.split_whitespace().map(|s| s.to_string()).collect())
 }

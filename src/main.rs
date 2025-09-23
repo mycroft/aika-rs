@@ -16,7 +16,8 @@ use crate::claude::{
 
 pub mod input;
 use crate::input::{
-    get_command_output,
+    get_input,
+    from_config,
 };
 
 #[derive(Parser)]
@@ -68,21 +69,22 @@ fn main() -> anyhow::Result<()> {
             list_anthropic_models()
         }
         Some(Commands::Query { model, prompt, input }) => {
-            let default_input = "git diff --cached";
             let default_model = "claude-3-5-sonnet-latest";
             let default_prompt = "commit-message";
-
-            let command = config.inputs.get(&input.clone().unwrap())
-                .map(|input| input.command.clone())
-                .unwrap_or_else(|| { eprintln!("Input '{}' not found in config, using default command.", input.clone().unwrap()); default_input.to_string() });
 
             let prompt = config.prompts.get(&prompt.clone().unwrap_or(default_prompt.to_string()))
                 .map(|prompt| prompt.prompt.clone())
                 .unwrap_or_else(|| "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```".to_string());
 
+            let input = config.inputs.get(&input.clone().unwrap())
+                .map(|input| input)
+                .unwrap_or_else(|| { eprintln!("Input '{}' not found in config, using default command.", input.clone().unwrap()); &config.inputs.get("git-diff-cached").unwrap()});
+
+            let input = get_input(&from_config(input), &PathBuf::from("."), cli.debug).expect("Failed to get input");
+            
             let prompt = prompt.replace(
                 "{input}",
-                &get_command_output(&command.split_whitespace().collect(), &PathBuf::from("."), cli.debug).unwrap_or_else(|_| "No input found.".to_string())
+                &input,
             );
 
             query_anthropic(
