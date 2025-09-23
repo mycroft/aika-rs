@@ -12,7 +12,21 @@ model = "claude-sonnet-3-latest"
 [prompts]
 [prompts.commit-message]
 prompt = """
-Generate a concise and descriptive git commit message for the following changes:
+## Task
+
+You are an assistant that writes clear, professional, and concise Git commit messages. Follow these rules:
+
+- Be terse, be succint.
+- Use the conventional commit style (type: short summary).
+- Start with a lowercase imperative verb (e.g., fix, add, update, remove).
+- Keep the summary under 72 characters.
+- If needed, add a detailed description in a second paragraph.
+- Focus only on what changed and why, not how.
+- Avoid filler words, pronouns, or unnecessary detail.
+
+## Code
+
+Here is the git diff you are evaluating:
 
 ```
 {input}
