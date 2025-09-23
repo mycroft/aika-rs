@@ -8,3 +8,35 @@ command = "git diff --cached"
 [providers]
 [providers.claude]
 model = "claude-sonnet-3-latest"
+
+[prompts]
+[prompts.commit-message]
+prompt = """
+Generate a concise and descriptive git commit message for the following changes:
+
+```
+{input}
+```
+"""
+
+[prompts.review]
+prompt = """
+## Task
+
+You are an expert code reviewer. Review the given commit or pull request with these rules:
+
+- Summarize the purpose of the change in one or two sentences.
+- Check for correctness, readability, security, and performance issues.
+- Flag missing tests, unclear naming, or inconsistent style.
+- Suggest concrete improvements with brief explanations.
+- Be objective and constructive; avoid personal remarks.
+- If everything looks good, state why it’s acceptable.
+
+## Code
+
+Here is the git diff you are evaluating:
+
+```
+{input}
+```
+"""

@@ -37,6 +37,10 @@ enum Commands {
         /// Model to use (default: claude-3-5-sonnet-latest)
         #[arg(short, long, default_value = "claude-3-5-sonnet-latest")]
         model: Option<String>,
+
+        /// Prompt to use; if empty, using a generic prompt
+        #[arg(short, long, default_value = "commit-message")]
+        prompt: Option<String>,
     },
 }
 
@@ -60,18 +64,6 @@ fn get_command_output(cmd: &Vec<&str>, path: &PathBuf) -> anyhow::Result<String>
     Ok(stdout)
 }
 
-fn get_commit_msg_prompt(command: &str, path: &PathBuf) -> String {
-    let path_str: std::borrow::Cow<'_, str> = path.to_string_lossy();
-
-    let mut command = command.split_whitespace().collect::<Vec<&str>>();
-    command.push(&path_str);
-
-    format!(
-        "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{}```\n",
-        get_command_output(&command, path).unwrap_or_else(|_| "No changes found.".to_string())
-    )
-}
-
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
@@ -87,15 +79,23 @@ fn main() -> anyhow::Result<()> {
         Some(Commands::ListModels) => {
             list_anthropic_models()
         }
-        Some(Commands::Query { model, input }) => {
+        Some(Commands::Query { model, prompt, input }) => {
             let default_input = "git diff --cached";
             let default_model = "claude-3-5-sonnet-latest";
+            let default_prompt = "commit-message";
 
             let command = config.inputs.get(&input.clone().unwrap())
                 .map(|input| input.command.clone())
                 .unwrap_or_else(|| default_input.to_string());
-            
-            let prompt = get_commit_msg_prompt(&command, &PathBuf::from("."));
+
+            let prompt = config.prompts.get(&prompt.clone().unwrap_or(default_prompt.to_string()))
+                .map(|prompt| prompt.prompt.clone())
+                .unwrap_or_else(|| "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```".to_string());
+
+            let prompt = prompt.replace(
+                "{input}",
+                &get_command_output(&command.split_whitespace().collect(), &PathBuf::from(".")).unwrap_or_else(|_| "No input found.".to_string())
+            );
 
             query_anthropic(
                 model.as_deref().unwrap_or(

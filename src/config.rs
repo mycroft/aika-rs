@@ -15,9 +15,15 @@ pub struct Input {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Prompt {
+    pub prompt: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub providers: HashMap<String, Provider>,
     pub inputs: HashMap<String, Input>,
+    pub prompts: HashMap<String, Prompt>,
 }
 
 pub fn load_config(config_file: &str) -> Result<Config> {
@@ -61,5 +67,13 @@ pub fn get_default_config() -> Config {
         },
     );
 
-    Config { providers, inputs }
+    let mut prompts = HashMap::new();
+    prompts.insert(
+        "commit-message".to_string(),
+        Prompt {
+            prompt: "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```".to_string(),
+        },
+    );
+
+    Config { providers, inputs, prompts }
 }
