@@ -2,7 +2,7 @@
 [inputs.git-diff]
 command = "git diff"
 
-[input.git-diff-cached]
+[inputs.git-diff-cached]
 command = "git diff --cached"
 
 [providers]
