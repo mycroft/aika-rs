@@ -14,6 +14,11 @@ use crate::claude::{
     query_anthropic,
 };
 
+pub mod input;
+use crate::input::{
+    get_command_output,
+};
+
 #[derive(Parser)]
 #[command(name = "aika")]
 #[command(about = "A tool to use Claude AI from the command line", long_about = None)]
@@ -24,6 +29,9 @@ struct Cli {
 
     #[arg(short, long)]
     config: Option<String>,
+
+    #[arg(long, default_value_t = false)]
+    debug: bool,
 }
 
 #[derive(Subcommand)]
@@ -42,26 +50,6 @@ enum Commands {
         #[arg(short, long, default_value = "commit-message")]
         prompt: Option<String>,
     },
-}
-
-fn get_command_output(cmd: &Vec<&str>, path: &PathBuf) -> anyhow::Result<String> {
-    let output = std::process::Command::new(&cmd[0])
-        .args(&cmd[1..])
-        .current_dir(path)
-        .output()
-        .map_err(|e| anyhow::anyhow!("Failed to execute command {:?}: {}", cmd, e))?;
-    
-    if !output.status.success() {
-        return Err(anyhow::anyhow!(
-            "Git command failed with status: {}",
-            output.status
-        ));
-    }
-
-    let stdout = String::from_utf8(output.stdout)
-        .map_err(|e| anyhow::anyhow!("Failed to parse git output: {}", e))?;
-
-    Ok(stdout)
 }
 
 fn main() -> anyhow::Result<()> {
@@ -86,7 +74,7 @@ fn main() -> anyhow::Result<()> {
 
             let command = config.inputs.get(&input.clone().unwrap())
                 .map(|input| input.command.clone())
-                .unwrap_or_else(|| default_input.to_string());
+                .unwrap_or_else(|| { eprintln!("Input '{}' not found in config, using default command.", input.clone().unwrap()); default_input.to_string() });
 
             let prompt = config.prompts.get(&prompt.clone().unwrap_or(default_prompt.to_string()))
                 .map(|prompt| prompt.prompt.clone())
@@ -94,7 +82,7 @@ fn main() -> anyhow::Result<()> {
 
             let prompt = prompt.replace(
                 "{input}",
-                &get_command_output(&command.split_whitespace().collect(), &PathBuf::from(".")).unwrap_or_else(|_| "No input found.".to_string())
+                &get_command_output(&command.split_whitespace().collect(), &PathBuf::from("."), cli.debug).unwrap_or_else(|_| "No input found.".to_string())
             );
 
             query_anthropic(
