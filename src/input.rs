@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 pub enum Input {
     Command(Vec<String>),
-    Files(Vec<String>)
+    Files(Vec<String>),
+    Dir(String),
 }
 
 pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyhow::Result<String> {
@@ -51,7 +52,30 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
                 contents.push_str("\n");
             }
             Ok(contents)
-        }
+        },
+        Input::Dir(dir) => {
+            let dir_path = path.join(dir);
+            if debug {
+                eprintln!("Reading directory: {:?}", dir_path);
+            }
+            let mut contents = String::new();
+            for entry in std::fs::read_dir(&dir_path)
+                .map_err(|e| anyhow::anyhow!("Failed to read directory {:?}: {}", dir_path, e))? 
+            {
+                let entry = entry.map_err(|e| anyhow::anyhow!("Failed to read directory entry: {}", e))?;
+                let path = entry.path();
+                if path.is_file() {
+                    if debug {
+                        eprintln!("Reading file: {:?}", path);
+                    }
+                    let file_content = std::fs::read_to_string(&path)
+                        .map_err(|e| anyhow::anyhow!("Failed to read file {:?}: {}", path, e))?;
+                    contents.push_str(&file_content);
+                    contents.push_str("\n");
+                }
+            }
+            Ok(contents)
+        },
     }
 }
 

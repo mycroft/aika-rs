@@ -16,6 +16,7 @@ use crate::claude::{
 
 pub mod input;
 use crate::input::{
+    Input,
     get_input,
     from_config,
 };
@@ -41,7 +42,7 @@ enum Commands {
     Query {
         /// Input type: prompt to use; if empty, using a generic prompt using git diff --cached
         #[arg(short, long, default_value = "git-diff-cached")]
-        input: Option<String>,
+        input: String,
 
         /// Model to use (default: claude-3-5-sonnet-latest)
         #[arg(short, long, default_value = "claude-3-5-sonnet-latest")]
@@ -76,12 +77,20 @@ fn main() -> anyhow::Result<()> {
                 .map(|prompt| prompt.prompt.clone())
                 .unwrap_or_else(|| "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```".to_string());
 
-            let input = config.inputs.get(&input.clone().unwrap())
-                .map(|input| input)
-                .unwrap_or_else(|| { eprintln!("Input '{}' not found in config, using default command.", input.clone().unwrap()); &config.inputs.get("git-diff-cached").unwrap()});
+            let input = if input.starts_with("file:") {
+                let files = &input[5..].split(",").map(|s| s.to_string()).collect::<Vec<String>>();
+                get_input(&Input::Files(files.clone()), &PathBuf::from("."), cli.debug).expect("Failed to get input from file(s)")
+            } else if input.starts_with("dir:") {
+                let dir = &input[4..];
+                get_input(&Input::Dir(dir.to_string()), &PathBuf::from("."), cli.debug).expect("Failed to get input from directory")
+            } else {
+                let input = config.inputs.get(&input.clone())
+                    .map(|input| input)
+                    .unwrap_or_else(|| { eprintln!("Input '{}' not found in config, using default command.", &input); &config.inputs.get("git-diff-cached").unwrap()});
 
-            let input = get_input(&from_config(input), &PathBuf::from("."), cli.debug).expect("Failed to get input");
-            
+                get_input(&from_config(input), &PathBuf::from("."), cli.debug).expect("Failed to get input")
+            };
+
             let prompt = prompt.replace(
                 "{input}",
                 &input,
