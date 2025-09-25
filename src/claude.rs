@@ -63,13 +63,41 @@ pub fn query_anthropic(model: &str, prompt: &str) -> anyhow::Result<()> {
     let api_key = std::env::var("ANTHROPIC_API_KEY")
             .map_err(|_| anyhow::anyhow!("ANTHROPIC_API_KEY environment variable is not set"))?;
     
-    let response: ClaudeResponse = ureq::post("https://api.anthropic.com/v1/messages")
+    let config = ureq::Agent::config_builder()
+            .http_status_as_error(false)
+            .build();
+
+    let agent: ureq::Agent = config.into();
+
+    let response = agent.post("https://api.anthropic.com/v1/messages")
             .header("x-api-key", &api_key)
             .header("anthropic-version", "2023-06-01")
             .header("content-type", "application/json")
-            .send_json(query)?
+            .send_json(query);
+
+    let mut response = match response {
+            Ok(resp) => resp,
+            Err(e) => {
+                return Err(anyhow::anyhow!("Claude request failed: {}", e));
+            }
+        };
+
+    if response.status() != 200 {
+        let status = response.status();
+
+        let error_body = response
             .body_mut()
-            .read_json::<ClaudeResponse>()?;
+            .read_to_string()
+            .unwrap_or_else(|_| "Failed to read error body".to_string());
+
+            return Err(anyhow::anyhow!(
+            "Claude API error ({}): {}",
+            status,
+            error_body
+        ));
+    }
+
+    let response = response.body_mut().read_json::<ClaudeResponse>()?;
 
     for item in response.content {
         if item.content_type == "text" {
