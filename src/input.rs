@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 pub enum Input {
+    None,
     Command(Vec<String>),
     Files(Vec<String>),
     Dir(String),
@@ -36,6 +37,7 @@ pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyho
 
 pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<String> {
     match input {
+        Input::None => Ok(String::new()),
         Input::Command(cmd) => {
             get_command_output(&cmd.iter().map(|s| s.as_str()).collect(), path, debug)
         }
