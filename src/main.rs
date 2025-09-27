@@ -6,7 +6,7 @@ pub mod config;
 use crate::config::{Provider, load_config};
 
 pub mod claude;
-use crate::claude::{list_anthropic_models, query_anthropic};
+use crate::claude::{list_anthropic_models, query_anthropic, query_anthropic_stream};
 
 pub mod input;
 use crate::input::{Input, from_config, get_input};
@@ -41,6 +41,10 @@ enum Commands {
         /// Prompt to use; if empty, using a generic prompt
         #[arg(short, long, default_value = "commit-message")]
         prompt: Option<String>,
+
+        /// Enable streaming output
+        #[arg(short, long, default_value_t = false)]
+        stream: bool,
     },
 }
 
@@ -58,6 +62,7 @@ fn main() -> anyhow::Result<()> {
     match &cli.command {
         Some(Commands::ListModels) => list_anthropic_models(),
         Some(Commands::Query {
+            stream,
             model,
             prompt,
             input,
@@ -99,19 +104,24 @@ fn main() -> anyhow::Result<()> {
 
             let prompt = prompt.replace("{input}", &input);
 
-            query_anthropic(
-                model.as_deref().unwrap_or(
-                    config
-                        .providers
-                        .get("claude")
-                        .unwrap_or(&Provider {
-                            model: default_model.to_string(),
-                        })
-                        .model
-                        .as_str(),
-                ),
-                &prompt,
-            )
+            let default_provider = Provider {
+                model: default_model.to_string(),
+            };
+
+            let model = model.as_deref().unwrap_or(
+                config
+                    .providers
+                    .get("claude")
+                    .unwrap_or(&default_provider)
+                    .model
+                    .as_str(),
+            );
+
+            if *stream {
+                query_anthropic_stream(model, &prompt, Box::new(|text| print!("{}", text)))
+            } else {
+                query_anthropic(model, &prompt)
+            }
         }
         None => Err(anyhow::anyhow!(
             "No command provided. Use --help for usage information."
