@@ -1,16 +1,17 @@
 # aika-rs
 
-A command-line tool to interact with Claude AI, primarily focused on generating git commit messages and other text-based outputs using Anthropic's Claude models.
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A command-line tool that leverages Anthropic's Claude AI models to generate git commit messages and process text-based outputs. Built in Rust, aika-rs provides a seamless interface for interacting with Claude AI from your terminal.
 
 ## Features
 
-- Generate commit messages from git diffs using Claude AI
-- List available Claude models
-- Configurable input sources (files, directories, commands)
-- Custom prompts support
-- TOML-based configuration
+- 🤖 Generate AI-powered commit messages from git diffs
+- 📋 List available Claude AI models
+- 🔧 Flexible input sources (files, directories, commands)
+- 📝 Customizable prompts via TOML configuration
+- 🔄 Support for streaming responses
+- 🎯 Debug mode for detailed execution information
 
 ## Installation
 
@@ -23,7 +24,7 @@ A command-line tool to interact with Claude AI, primarily focused on generating 
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/aika-rs
+git clone https://github.com/mycroft/aika-rs
 cd aika-rs
 cargo build --release
 ```
@@ -76,6 +77,11 @@ aika query --model "claude-3-5-opus-latest"
 aika query --prompt "custom-prompt-name"
 ```
 
+Enable streaming output:
+```bash
+aika query --stream
+```
+
 ### Debug Mode
 
 Add `--debug` flag to see detailed execution information:
@@ -91,6 +97,13 @@ aika query --debug
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Dependencies
+
+- [Anthropic's Claude API](https://anthropic.com/) - AI model provider
+- [clap](https://github.com/clap-rs/clap) - Command line argument parsing
+- [ureq](https://github.com/algesten/ureq) - HTTP client
+- Additional dependencies can be found in `Cargo.toml`
 
 ## License
 
