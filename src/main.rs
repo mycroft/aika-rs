@@ -3,23 +3,13 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 pub mod config;
-use crate::config::{    
-    load_config,
-    Provider,
-};
+use crate::config::{Provider, load_config};
 
 pub mod claude;
-use crate::claude::{
-    list_anthropic_models,
-    query_anthropic,
-};
+use crate::claude::{list_anthropic_models, query_anthropic};
 
 pub mod input;
-use crate::input::{
-    Input,
-    get_input,
-    from_config,
-};
+use crate::input::{Input, from_config, get_input};
 
 #[derive(Parser)]
 #[command(name = "aika")]
@@ -58,7 +48,7 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     let config = match load_config(cli.config.as_deref().unwrap_or("")) {
-        Ok(config)  => config,
+        Ok(config) => config,
         Err(e) => {
             eprintln!("Warning: Failed to load config file: {}", e);
             return Err(e);
@@ -66,10 +56,12 @@ fn main() -> anyhow::Result<()> {
     };
 
     match &cli.command {
-        Some(Commands::ListModels) => {
-            list_anthropic_models()
-        }
-        Some(Commands::Query { model, prompt, input }) => {
+        Some(Commands::ListModels) => list_anthropic_models(),
+        Some(Commands::Query {
+            model,
+            prompt,
+            input,
+        }) => {
             let default_model = "claude-3-5-sonnet-latest";
             let default_prompt = "commit-message";
 
@@ -78,32 +70,51 @@ fn main() -> anyhow::Result<()> {
                 .unwrap_or_else(|| "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```".to_string());
 
             let input = if input.starts_with("file:") {
-                let files = &input[5..].split(",").map(|s| s.to_string()).collect::<Vec<String>>();
-                get_input(&Input::Files(files.clone()), &PathBuf::from("."), cli.debug).expect("Failed to get input from file(s)")
+                let files = &input[5..]
+                    .split(",")
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>();
+                get_input(&Input::Files(files.clone()), &PathBuf::from("."), cli.debug)
+                    .expect("Failed to get input from file(s)")
             } else if input.starts_with("dir:") {
                 let dir = &input[4..];
-                get_input(&Input::Dir(dir.to_string()), &PathBuf::from("."), cli.debug).expect("Failed to get input from directory")
+                get_input(&Input::Dir(dir.to_string()), &PathBuf::from("."), cli.debug)
+                    .expect("Failed to get input from directory")
             } else {
-                let input = config.inputs.get(&input.clone())
+                let input = config
+                    .inputs
+                    .get(&input.clone())
                     .map(|input| input)
-                    .unwrap_or_else(|| { eprintln!("Input '{}' not found in config, using default command.", &input); &config.inputs.get("git-diff-cached").unwrap()});
+                    .unwrap_or_else(|| {
+                        eprintln!(
+                            "Input '{}' not found in config, using default command.",
+                            &input
+                        );
+                        &config.inputs.get("git-diff-cached").unwrap()
+                    });
 
-                get_input(&from_config(input), &PathBuf::from("."), cli.debug).expect("Failed to get input")
+                get_input(&from_config(input), &PathBuf::from("."), cli.debug)
+                    .expect("Failed to get input")
             };
 
-            let prompt = prompt.replace(
-                "{input}",
-                &input,
-            );
+            let prompt = prompt.replace("{input}", &input);
 
             query_anthropic(
                 model.as_deref().unwrap_or(
-                config.providers.get("claude").unwrap_or(&Provider{model: default_model.to_string()}).model.as_str()),
+                    config
+                        .providers
+                        .get("claude")
+                        .unwrap_or(&Provider {
+                            model: default_model.to_string(),
+                        })
+                        .model
+                        .as_str(),
+                ),
                 &prompt,
             )
         }
-        None => {
-            Err(anyhow::anyhow!("No command provided. Use --help for usage information."))
-        }
+        None => Err(anyhow::anyhow!(
+            "No command provided. Use --help for usage information."
+        )),
     }
 }

@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
@@ -40,7 +40,10 @@ pub fn load_config(config_file: &str) -> Result<Config> {
 
     if !config_path.exists() {
         // Returning default config if file does not exist
-        eprintln!("Config file not found at {:?}, using default configuration.", config_path);
+        eprintln!(
+            "Config file not found at {:?}, using default configuration.",
+            config_path
+        );
         return Ok(get_default_config());
     }
 
@@ -75,5 +78,9 @@ pub fn get_default_config() -> Config {
         },
     );
 
-    Config { providers, inputs, prompts }
+    Config {
+        providers,
+        inputs,
+        prompts,
+    }
 }

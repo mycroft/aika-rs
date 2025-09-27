@@ -16,7 +16,7 @@ pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyho
         .current_dir(path)
         .output()
         .map_err(|e| anyhow::anyhow!("Failed to execute command {:?}: {}", cmd, e))?;
-    
+
     if !output.status.success() {
         return Err(anyhow::anyhow!(
             "Git command failed with status: {}",
@@ -38,7 +38,7 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
     match input {
         Input::Command(cmd) => {
             get_command_output(&cmd.iter().map(|s| s.as_str()).collect(), path, debug)
-        },
+        }
         Input::Files(files) => {
             let mut contents = String::new();
             for file in files {
@@ -52,7 +52,7 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
                 contents.push_str("\n");
             }
             Ok(contents)
-        },
+        }
         Input::Dir(dir) => {
             let dir_path = path.join(dir);
             if debug {
@@ -60,9 +60,10 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
             }
             let mut contents = String::new();
             for entry in std::fs::read_dir(&dir_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read directory {:?}: {}", dir_path, e))? 
+                .map_err(|e| anyhow::anyhow!("Failed to read directory {:?}: {}", dir_path, e))?
             {
-                let entry = entry.map_err(|e| anyhow::anyhow!("Failed to read directory entry: {}", e))?;
+                let entry =
+                    entry.map_err(|e| anyhow::anyhow!("Failed to read directory entry: {}", e))?;
                 let path = entry.path();
                 if path.is_file() {
                     if debug {
@@ -75,10 +76,16 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
                 }
             }
             Ok(contents)
-        },
+        }
     }
 }
 
 pub fn from_config(input: &crate::config::Input) -> Input {
-    Input::Command(input.command.split_whitespace().map(|s| s.to_string()).collect())
+    Input::Command(
+        input
+            .command
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect(),
+    )
 }
