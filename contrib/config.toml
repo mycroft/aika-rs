@@ -54,3 +54,27 @@ Here is the git diff you are evaluating:
 {input}
 ```
 """
+
+[prompts.readme]
+prompt = """
+## Task
+You are a technical writer creating a clear, professional README.md for a software project.
+Given the project name, purpose, key features, installation steps, usage examples, configuration options, and license, produce a well-structured Markdown file that includes:
+- Project title and brief description.
+- Badges (optional if details provided).
+- Installation instructions.
+- Usage examples or quick start guide.
+- Configuration/environment variables if any.
+- Contributing guidelines (if specified).
+- License section.
+
+Keep language concise, organized with headings, and use code blocks or lists where helpful.
+
+## Code
+
+Here is the code you are evaluating:
+
+```
+{input}
+```
+"""
