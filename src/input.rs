@@ -7,6 +7,7 @@ pub enum Input {
     Dir(String),
 }
 
+/// Execute a command and return its output as a String
 pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyhow::Result<String> {
     if debug {
         eprintln!("Executing command: {:?}", cmd);
@@ -35,6 +36,7 @@ pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyho
     Ok(stdout)
 }
 
+/// Get input based on the specified Input enum variant
 pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<String> {
     match input {
         Input::None => Ok(String::new()),

@@ -48,6 +48,9 @@ enum Commands {
     },
 }
 
+const DEFAULT_MODEL: &str = "claude-3-5-sonnet-latest";
+const DEFAULT_PROMPT: &str = "commit-message";
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
@@ -67,9 +70,6 @@ fn main() -> anyhow::Result<()> {
             prompt,
             input,
         }) => {
-            let default_model = "claude-3-5-sonnet-latest";
-            let default_prompt = "commit-message";
-
             let input = if input.starts_with("file:") {
                 let files = &input[5..]
                     .split(",")
@@ -98,13 +98,13 @@ fn main() -> anyhow::Result<()> {
                     .expect("Failed to get input")
             };
 
-            let prompt = config.prompts.get(&prompt.clone().unwrap_or(default_prompt.to_string()))
+            let prompt = config.prompts.get(&prompt.clone().unwrap_or(DEFAULT_PROMPT.to_string()))
                 .map(|prompt| prompt.prompt.clone())
                 .unwrap_or_else(|| "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```".to_string())
                 .replace("{input}", &input);
 
             let default_provider = Provider {
-                model: default_model.to_string(),
+                model: DEFAULT_MODEL.to_string(),
             };
 
             let model = model.as_deref().unwrap_or(

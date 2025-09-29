@@ -35,7 +35,7 @@ pub fn load_config(config_file: &str) -> Result<Config> {
     let config_path: PathBuf = if !config_file.is_empty() {
         config_file.into()
     } else {
-        default_config_path.to_str().unwrap().to_string().into()
+        default_config_path
     };
 
     if !config_path.exists() {
