@@ -3,6 +3,10 @@ name = "aika-rs"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "aika"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.48", features = ["derive"] }
