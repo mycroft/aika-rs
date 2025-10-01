@@ -65,11 +65,29 @@ fn main() -> anyhow::Result<()> {
     match &cli.command {
         Some(Commands::ListModels) => list_anthropic_models(),
         Some(Commands::Query {
-            stream,
-            model,
-            prompt,
-            input,
-        }) => {
+            stream: _,
+            model: _,
+            prompt: _,
+            input: _,
+        })
+        | None => {
+            // Use default values when no command is provided
+            let (stream, model, prompt, input) = match &cli.command {
+                Some(Commands::Query {
+                    stream,
+                    model,
+                    prompt,
+                    input,
+                }) => (*stream, model.clone(), prompt.clone(), input.clone()),
+                None => (
+                    false,                            // default stream
+                    Some(DEFAULT_MODEL.to_string()),  // default model
+                    Some(DEFAULT_PROMPT.to_string()), // default prompt
+                    "git-diff-cached".to_string(),    // default input
+                ),
+                _ => unreachable!(),
+            };
+
             let input = if input.starts_with("file:") {
                 let files = &input[5..]
                     .split(",")
@@ -116,14 +134,11 @@ fn main() -> anyhow::Result<()> {
                     .as_str(),
             );
 
-            if *stream {
+            if stream {
                 query_anthropic_stream(model, &prompt, Box::new(|text| print!("{}", text)))
             } else {
                 query_anthropic(model, &prompt)
             }
         }
-        None => Err(anyhow::anyhow!(
-            "No command provided. Use --help for usage information."
-        )),
     }
 }
