@@ -8,6 +8,9 @@ use crate::config::{Provider, load_config};
 pub mod claude;
 use crate::claude::{list_anthropic_models, query_anthropic, query_anthropic_stream};
 
+pub mod openai;
+use crate::openai::{list_openai_models, query_openai};
+
 pub mod input;
 use crate::input::{Input, from_config, get_input};
 
@@ -24,6 +27,9 @@ struct Cli {
 
     #[arg(long, default_value_t = false)]
     debug: bool,
+
+    #[arg(short, long, default_value = "anthropic")]
+    provider: String,
 }
 
 #[derive(Subcommand)]
@@ -63,7 +69,17 @@ fn main() -> anyhow::Result<()> {
     };
 
     match &cli.command {
-        Some(Commands::ListModels) => list_anthropic_models(),
+        Some(Commands::ListModels) => match cli.provider.as_str() {
+            "anthropic" => list_anthropic_models(),
+            "openai" => list_openai_models(),
+            _ => {
+                eprintln!(
+                    "Provider '{}' not supported for listing models",
+                    cli.provider
+                );
+                Ok(())
+            }
+        },
         Some(Commands::Query {
             stream: _,
             model: _,
@@ -134,10 +150,19 @@ fn main() -> anyhow::Result<()> {
                     .as_str(),
             );
 
-            if stream {
-                query_anthropic_stream(model, &prompt, Box::new(|text| print!("{}", text)))
-            } else {
-                query_anthropic(model, &prompt)
+            match cli.provider.as_str() {
+                "anthropic" => {
+                    if stream {
+                        query_anthropic_stream(model, &prompt, Box::new(|text| print!("{}", text)))
+                    } else {
+                        query_anthropic(model, &prompt)
+                    }
+                }
+                "openai" => query_openai(model, &prompt),
+                _ => {
+                    eprintln!("Provider '{}' not supported for querying", cli.provider);
+                    return Ok(());
+                }
             }
         }
     }
