@@ -1,3 +1,5 @@
+use std::io::{BufRead as _, BufReader};
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -37,6 +39,29 @@ struct OpenAIResponse {
     model: String,
 }
 
+// Streaming response structures
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAIStreamChoice {
+    delta: OpenAIStreamDelta,
+    finish_reason: Option<String>,
+    index: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAIStreamDelta {
+    content: Option<String>,
+    role: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAIStreamResponse {
+    choices: Vec<OpenAIStreamChoice>,
+    id: String,
+    object: String,
+    created: u64,
+    model: String,
+}
+
 pub fn list_openai_models() -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY")
         .map_err(|_| anyhow::anyhow!("OPENAI_API_KEY environment variable is not set"))?;
@@ -58,7 +83,7 @@ pub fn list_openai_models() -> Result<()> {
     Ok(())
 }
 
-pub fn query_openai(model: &str, prompt: &str) -> Result<()> {
+pub fn query_openai(model: &str, prompt: &str, streaming: bool) -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY")
         .map_err(|_| anyhow::anyhow!("OPENAI_API_KEY environment variable is not set"))?;
 
@@ -68,6 +93,7 @@ pub fn query_openai(model: &str, prompt: &str) -> Result<()> {
             {"role": "user", "content": prompt}
         ],
         "max_completion_tokens": 4096,
+        "stream": streaming,
     });
 
     let config = ureq::Agent::config_builder()
@@ -104,11 +130,45 @@ pub fn query_openai(model: &str, prompt: &str) -> Result<()> {
         ));
     }
 
-    let response = response.body_mut().read_json::<OpenAIResponse>()?;
+    if streaming {
+        let reader = BufReader::new(response.body_mut().with_config().reader());
 
-    for item in response.choices {
-        if item.message.role == "assistant" {
-            println!("{}", item.message.content);
+        for line in reader.lines() {
+            let line = line?;
+            if line.trim().is_empty() {
+                continue;
+            }
+
+            // Parse SSE format: "data: {...}"
+            if let Some(data) = line.strip_prefix("data: ") {
+                // Check for end of stream
+                if data == "[DONE]" {
+                    break;
+                }
+
+                // Parse JSON response
+                match serde_json::from_str::<OpenAIStreamResponse>(data) {
+                    Ok(stream_response) => {
+                        if let Some(choice) = stream_response.choices.first()
+                            && let Some(content) = &choice.delta.content
+                        {
+                            print!("{}", content.as_str());
+                        }
+                    }
+                    Err(e) => {
+                        // Log parse errors but continue processing
+                        eprintln!("Failed to parse streaming response: {}", e);
+                    }
+                }
+            }
+        }
+    } else {
+        let response = response.body_mut().read_json::<OpenAIResponse>()?;
+
+        for item in response.choices {
+            if item.message.role == "assistant" {
+                println!("{}", item.message.content);
+            }
         }
     }
 

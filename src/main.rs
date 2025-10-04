@@ -158,7 +158,7 @@ fn main() -> anyhow::Result<()> {
                         query_anthropic(model, &prompt)
                     }
                 }
-                "openai" => query_openai(model, &prompt),
+                "openai" => query_openai(model, &prompt, stream),
                 _ => {
                     eprintln!("Provider '{}' not supported for querying", cli.provider);
                     return Ok(());
