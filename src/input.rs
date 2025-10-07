@@ -13,7 +13,7 @@ pub fn get_command_output(cmd: &Vec<&str>, path: &PathBuf, debug: bool) -> anyho
         eprintln!("Executing command: {:?}", cmd);
         eprintln!("In directory: {:?}", path);
     }
-    let output = std::process::Command::new(&cmd[0])
+    let output = std::process::Command::new(cmd[0])
         .args(&cmd[1..])
         .current_dir(path)
         .output()
@@ -53,7 +53,7 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
                 let file_content = std::fs::read_to_string(&file_path)
                     .map_err(|e| anyhow::anyhow!("Failed to read file {:?}: {}", file_path, e))?;
                 contents.push_str(&file_content);
-                contents.push_str("\n");
+                contents.push('\n');
             }
             Ok(contents)
         }
@@ -76,7 +76,7 @@ pub fn get_input(input: &Input, path: &PathBuf, debug: bool) -> anyhow::Result<S
                     let file_content = std::fs::read_to_string(&path)
                         .map_err(|e| anyhow::anyhow!("Failed to read file {:?}: {}", path, e))?;
                     contents.push_str(&file_content);
-                    contents.push_str("\n");
+                    contents.push('\n');
                 }
             }
             Ok(contents)

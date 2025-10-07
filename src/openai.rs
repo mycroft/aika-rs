@@ -182,8 +182,5 @@ impl ProviderTrait for OpenAIProvider {
         }
 
         Ok(())
-
     }
-
 }
-

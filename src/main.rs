@@ -96,28 +96,26 @@ fn main() -> anyhow::Result<()> {
                 _ => unreachable!(),
             };
 
-            let input = if input.starts_with("file:") {
-                let files = &input[5..]
+            let input = if let Some(input) = input.strip_prefix("file:") {
+                let files = &input
                     .split(",")
                     .map(|s| s.to_string())
                     .collect::<Vec<String>>();
                 get_input(&Input::Files(files.clone()), &PathBuf::from("."), cli.debug)
                     .expect("Failed to get input from file(s)")
-            } else if input.starts_with("dir:") {
-                let dir = &input[4..];
+            } else if let Some(dir) = input.strip_prefix("dir:") {
                 get_input(&Input::Dir(dir.to_string()), &PathBuf::from("."), cli.debug)
                     .expect("Failed to get input from directory")
             } else {
                 let input = config
                     .inputs
                     .get(&input.clone())
-                    .map(|input| input)
                     .unwrap_or_else(|| {
                         eprintln!(
                             "Input '{}' not found in config, using default command.",
                             &input
                         );
-                        &config.inputs.get("git-diff-cached").unwrap()
+                        config.inputs.get("git-diff-cached").unwrap()
                     });
 
                 get_input(&from_config(input), &PathBuf::from("."), cli.debug)
@@ -142,9 +140,9 @@ fn main() -> anyhow::Result<()> {
                     .as_str(),
             );
 
-            provider.query(&model, &prompt, stream)?;
+            provider.query(model, &prompt, stream)?;
 
-            return Ok(());
+            Ok(())
         }
     }
 }
