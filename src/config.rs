@@ -5,6 +5,12 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Credentials {
+    pub anthropic_api_key: Option<String>,
+    pub openai_api_key: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Provider {
     pub model: String,
 }
@@ -21,6 +27,7 @@ pub struct Prompt {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    pub credentials: Option<Credentials>,
     pub providers: HashMap<String, Provider>,
     pub inputs: HashMap<String, Input>,
     pub prompts: HashMap<String, Prompt>,
@@ -79,6 +86,7 @@ pub fn get_default_config() -> Config {
     );
 
     Config {
+        credentials: None,
         providers,
         inputs,
         prompts,

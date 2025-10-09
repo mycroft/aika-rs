@@ -4,7 +4,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::provider::Provider as ProviderTrait;
+use crate::{config::Config, provider::Provider as ProviderTrait};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Model {
@@ -69,9 +69,15 @@ pub struct OpenAIProvider {
 }
 
 impl OpenAIProvider {
-    pub fn new() -> Result<Self> {
-        let api_key = std::env::var("OPENAI_API_KEY")
-            .map_err(|_| anyhow::anyhow!("OPENAI_API_KEY environment variable is not set"))?;
+    pub fn new(config: &Config) -> Result<Self> {
+        let api_key: String = std::env::var("OPENAI_API_KEY")
+            .or_else(|_| {
+                config.credentials
+                    .as_ref()
+                    .and_then(|creds| creds.openai_api_key.clone())
+                    .ok_or(std::env::VarError::NotPresent)
+            })
+            .map_err(|_| anyhow::anyhow!("OPENAI_API_KEY environment variable is not set and no API key found in config"))?;
         Ok(Self { api_key })
     }
 }

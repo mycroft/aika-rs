@@ -68,7 +68,7 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let provider = create_provider(&cli.provider)?;
+    let provider = create_provider(&cli.provider, &config)?;
 
     match &cli.command {
         Some(Commands::ListModels) => provider.list_models(),

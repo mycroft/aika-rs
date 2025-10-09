@@ -24,16 +24,18 @@
 
 use anyhow::Result;
 
+use crate::config::Config;
+
 pub trait Provider {
     fn list_models(&self) -> Result<()>;
     fn query(&self, message: &str, model: &str, streaming: bool) -> Result<()>;
 }
 
 /// Factory function to create AI providers
-pub fn create_provider(provider_name: &str) -> Result<Box<dyn Provider>> {
+pub fn create_provider(provider_name: &str, config: &Config) -> Result<Box<dyn Provider>> {
     match provider_name {
-        "anthropic" => Ok(Box::new(crate::claude::ClaudeProvider::new()?)),
-        "openai" => Ok(Box::new(crate::openai::OpenAIProvider::new()?)),
+        "anthropic" => Ok(Box::new(crate::claude::ClaudeProvider::new(config)?)),
+        "openai" => Ok(Box::new(crate::openai::OpenAIProvider::new(config)?)),
         _ => Err(anyhow::anyhow!("Unsupported provider: {}", provider_name)),
     }
 }
