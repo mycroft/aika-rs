@@ -35,6 +35,7 @@ pub trait Provider {
 pub fn create_provider(provider_name: &str, config: &Config) -> Result<Box<dyn Provider>> {
     match provider_name {
         "anthropic" => Ok(Box::new(crate::claude::ClaudeProvider::new(config)?)),
+        "mistral" => Ok(Box::new(crate::mistral::MistralProvider::new(config)?)),
         "openai" => Ok(Box::new(crate::openai::OpenAIProvider::new(config)?)),
         _ => Err(anyhow::anyhow!("Unsupported provider: {}", provider_name)),
     }

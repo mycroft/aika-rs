@@ -9,6 +9,7 @@ pub mod provider;
 use crate::provider::create_provider;
 
 pub mod claude;
+pub mod mistral;
 pub mod openai;
 
 pub mod input;
@@ -107,16 +108,13 @@ fn main() -> anyhow::Result<()> {
                 get_input(&Input::Dir(dir.to_string()), &PathBuf::from("."), cli.debug)
                     .expect("Failed to get input from directory")
             } else {
-                let input = config
-                    .inputs
-                    .get(&input.clone())
-                    .unwrap_or_else(|| {
-                        eprintln!(
-                            "Input '{}' not found in config, using default command.",
-                            &input
-                        );
-                        config.inputs.get("git-diff-cached").unwrap()
-                    });
+                let input = config.inputs.get(&input.clone()).unwrap_or_else(|| {
+                    eprintln!(
+                        "Input '{}' not found in config, using default command.",
+                        &input
+                    );
+                    config.inputs.get("git-diff-cached").unwrap()
+                });
 
                 get_input(&from_config(input), &PathBuf::from("."), cli.debug)
                     .expect("Failed to get input")

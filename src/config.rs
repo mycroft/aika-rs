@@ -7,6 +7,7 @@ use anyhow::Result;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Credentials {
     pub anthropic_api_key: Option<String>,
+    pub mistral_api_key: Option<String>,
     pub openai_api_key: Option<String>,
 }
 
