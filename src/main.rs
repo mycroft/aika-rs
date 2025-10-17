@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 
 pub mod config;
@@ -103,10 +104,10 @@ fn main() -> anyhow::Result<()> {
                     .map(|s| s.to_string())
                     .collect::<Vec<String>>();
                 get_input(&Input::Files(files.clone()), &PathBuf::from("."), cli.debug)
-                    .expect("Failed to get input from file(s)")
+                    .context("Failed to get input from files")?
             } else if let Some(dir) = input.strip_prefix("dir:") {
                 get_input(&Input::Dir(dir.to_string()), &PathBuf::from("."), cli.debug)
-                    .expect("Failed to get input from directory")
+                    .context("Failed to get input from directory")?
             } else {
                 let input = config.inputs.get(&input.clone()).unwrap_or_else(|| {
                     eprintln!(
@@ -117,7 +118,7 @@ fn main() -> anyhow::Result<()> {
                 });
 
                 get_input(&from_config(input), &PathBuf::from("."), cli.debug)
-                    .expect("Failed to get input")
+                    .context("Failed to get input from config")?
             };
 
             let prompt = config.prompts.get(&prompt.clone().unwrap_or(DEFAULT_PROMPT.to_string()))
