@@ -109,7 +109,6 @@ impl ProviderTrait for MistralProvider {
                 "role": "user",
                 "content": prompt
             }],
-            "temperature": 0.0,
             "max_tokens": 4096,
             "stream": streaming,
         });
@@ -129,7 +128,7 @@ impl ProviderTrait for MistralProvider {
         let mut response = match response {
             Ok(resp) => resp,
             Err(e) => {
-                return Err(anyhow::anyhow!("Claude request failed: {}", e));
+                return Err(anyhow::anyhow!("Mistral request failed: {}", e));
             }
         };
 
@@ -141,7 +140,7 @@ impl ProviderTrait for MistralProvider {
                 .unwrap_or_else(|_| "Failed to read error body".to_string());
 
             return Err(anyhow::anyhow!(
-                "Claude API error ({}): {}",
+                "Mistral API error ({}): {}",
                 status,
                 error_body
             ));
@@ -177,7 +176,7 @@ impl ProviderTrait for MistralProvider {
                         }
                         Err(e) => {
                             // Log parse errors but continue processing
-                            eprintln!("Failed to parse Claude streaming response: {}", e);
+                            eprintln!("Failed to parse Mistral streaming response: {}", e);
                         }
                     }
                 }
