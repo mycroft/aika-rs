@@ -63,6 +63,7 @@ struct ClaudeContentDelta {
 
 pub struct ClaudeProvider {
     api_key: String,
+    base_url: String,
 }
 
 impl ClaudeProvider {
@@ -75,13 +76,17 @@ impl ClaudeProvider {
                     .ok_or(std::env::VarError::NotPresent)
             })
             .map_err(|_| anyhow::anyhow!("ANTHROPIC_API_KEY environment variable is not set and no API key found in config"))?;
-        Ok(Self { api_key })
+        Ok(Self {
+            api_key,
+            base_url: "https://api.anthropic.com".into(),
+        })
     }
 }
 
 impl ProviderTrait for ClaudeProvider {
     fn list_models(&self) -> anyhow::Result<()> {
-        let response: ModelsResponse = ureq::get("https://api.anthropic.com/v1/models")
+        let url = format!("{}/v1/models", self.base_url);
+        let response: ModelsResponse = ureq::get(url)
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")
             .call()?
@@ -97,6 +102,7 @@ impl ProviderTrait for ClaudeProvider {
     }
 
     fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<()> {
+        let url = format!("{}/v1/messages", self.base_url);
         let query = json!({
             "model": model,
             "temperature": 0.0,
@@ -115,7 +121,7 @@ impl ProviderTrait for ClaudeProvider {
         let agent: ureq::Agent = config.into();
 
         let response = agent
-            .post("https://api.anthropic.com/v1/messages")
+            .post(url)
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")
             .header("content-type", "application/json")
@@ -188,5 +194,87 @@ impl ProviderTrait for ClaudeProvider {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockito::ServerGuard;
+
+    fn setup_mock_server() -> ServerGuard {
+        mockito::Server::new()
+    }
+
+    #[test]
+    fn test_claude_query_success() {
+        let mut server = setup_mock_server();
+
+        let mock = server
+            .mock("POST", "/v1/messages")
+            .match_header("x-api-key", "test-key")
+            .match_header("anthropic-version", "2023-06-01")
+            .with_status(200)
+            .with_body(
+                r#"{
+                  "content": [{"type": "text", "text": "Fix typo in readme"}],
+                  "role": "assistant"
+              }"#,
+            )
+            .create();
+
+        let provider = ClaudeProvider {
+            api_key: "test-key".to_string(),
+            base_url: server.url(), // Point to mock server
+        };
+
+        let result = provider.query("test input", "claude-3-5-sonnet-latest", false);
+
+        mock.assert();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_claude_handles_api_error() {
+        let mut server = setup_mock_server();
+
+        let mock = server
+            .mock("POST", "/v1/messages")
+            .with_status(401)
+            .with_body(r#"{"error": {"message": "Invalid API key"}}"#)
+            .create();
+
+        let provider = ClaudeProvider {
+            api_key: "bad-key".to_string(),
+            base_url: server.url(),
+        };
+
+        let result = provider.query("test", "model", false);
+
+        mock.assert();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("401"));
+    }
+
+    #[test]
+    fn test_claude_streaming_response() {
+        let mut server = setup_mock_server();
+
+        // Mock SSE stream
+        let mock = server.mock("POST", "/v1/messages")
+              .with_status(200)
+              .with_header("content-type", "text/event-stream")
+              .with_body("data: {\"type\":\"content_block_delta\",\"delta\":{\"text\":\"Hello\"}}\n\ndata: {\"type\":\"message_stop\"}\n\n")
+              .create();
+
+        let provider = ClaudeProvider {
+            api_key: "test-key".to_string(),
+            base_url: server.url(),
+        };
+
+        let result = provider.query("test", "model", true);
+
+        mock.assert();
+        assert!(result.is_ok());
     }
 }

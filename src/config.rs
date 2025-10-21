@@ -34,6 +34,12 @@ pub struct Config {
     pub prompts: HashMap<String, Prompt>,
 }
 
+impl Config {
+    pub fn default() -> Self {
+        get_default_config()
+    }
+}
+
 pub fn load_config(config_file: &str) -> Result<Config> {
     let default_config_path = dirs::config_dir()
         .ok_or_else(|| anyhow::anyhow!("Could not determine config directory"))?
@@ -91,5 +97,49 @@ pub fn get_default_config() -> Config {
         providers,
         inputs,
         prompts,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_valid_config() {
+        let toml = r#"
+              [credentials]
+              anthropic_api_key = "test-key"
+
+              [inputs.git-diff-cached]
+              command = "git diff --cached"
+
+              [providers.claude]
+              model = "claude-3-5-sonnet-latest"
+
+              [prompts.custom]
+              prompt = "Custom prompt with {input}"
+          "#;
+
+        let config: Config = toml::from_str(toml).unwrap();
+        assert_eq!(
+            config.credentials.unwrap().anthropic_api_key,
+            Some("test-key".into())
+        );
+    }
+
+    #[test]
+    fn test_missing_config_uses_defaults() {
+        //let temp = TempDir::new().unwrap();
+        let config = load_config("non-existent-file").unwrap();
+
+        // Should have default prompts
+        assert!(config.prompts.contains_key("commit-message"));
+    }
+
+    #[test]
+    fn test_malformed_toml_returns_error() {
+        let bad_toml = "this is { not valid toml";
+        let result: Result<Config, _> = toml::from_str(bad_toml);
+        assert!(result.is_err());
     }
 }

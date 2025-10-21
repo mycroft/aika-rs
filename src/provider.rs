@@ -40,3 +40,25 @@ pub fn create_provider(provider_name: &str, config: &Config) -> Result<Box<dyn P
         _ => Err(anyhow::anyhow!("Unsupported provider: {}", provider_name)),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{config::Config, provider::create_provider};
+
+    #[test]
+    fn test_create_anthropic_provider() {
+        let config = Config::default();
+        let provider = create_provider("anthropic", &config);
+        assert!(provider.is_ok());
+    }
+
+    #[test]
+    fn test_unsupported_provider_returns_error() {
+        let config = Config::default();
+        let provider = create_provider("invalid-provider", &config);
+        assert!(provider.is_err());
+        if let Err(err) = &provider {
+            assert!(err.to_string().contains("Unsupported provider"));
+        }
+    }
+}

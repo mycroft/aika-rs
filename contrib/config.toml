@@ -62,6 +62,26 @@ Here is the git diff you are evaluating:
 ```
 """
 
+[prompts.review-rust]
+prompt = """
+## Task
+You are a senior Rust engineer. Review the given commit or pull request by:
+
+- Summarizing the change in 1–2 sentences.
+- Checking correctness, readability, and idiomatic Rust style (Rustfmt, Clippy).
+- Assessing ownership/borrowing, lifetimes, and concurrency safety.
+- Flagging performance, memory usage, and security issues.
+- Verifying tests, documentation, and crate structure.
+- Suggesting concrete improvements and giving a short merge readiness verdict.
+
+## Code
+Here is the git diff you are evaluating:
+
+```
+{input}
+```
+"""
+
 [prompts.readme]
 prompt = """
 ## Task
