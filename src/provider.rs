@@ -28,7 +28,7 @@ use crate::config::Config;
 
 pub trait Provider {
     fn list_models(&self) -> Result<()>;
-    fn query(&self, message: &str, model: &str, streaming: bool) -> Result<()>;
+    fn query(&self, message: &str, model: &str, streaming: bool) -> Result<String>;
 }
 
 /// Factory function to create AI providers

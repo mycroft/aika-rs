@@ -16,6 +16,9 @@ pub mod openai;
 pub mod input;
 use crate::input::{Input, from_config, get_input};
 
+pub mod output;
+use crate::output::wrap_text;
+
 #[derive(Parser)]
 #[command(name = "aika")]
 #[command(about = "A tool to use Claude AI from the command line", long_about = None)]
@@ -139,7 +142,14 @@ fn main() -> anyhow::Result<()> {
                     .as_str(),
             );
 
-            provider.query(model, &prompt, stream)?;
+            let response = provider.query(model, &prompt, stream);
+            if let Ok(response) = response {
+                if !stream {
+                    println!("{}", wrap_text(&response, 72));
+                }
+            } else {
+                eprintln!("Error querying provider: {}", response.unwrap_err());
+            }
 
             Ok(())
         }

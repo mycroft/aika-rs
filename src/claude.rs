@@ -101,7 +101,7 @@ impl ProviderTrait for ClaudeProvider {
         Ok(())
     }
 
-    fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<()> {
+    fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<String> {
         let url = format!("{}/v1/messages", self.base_url);
         let query = json!({
             "model": model,
@@ -113,6 +113,8 @@ impl ProviderTrait for ClaudeProvider {
             "max_tokens": 4096,
             "stream": streaming,
         });
+
+        let mut result = String::new();
 
         let config: ureq::config::Config = ureq::Agent::config_builder()
             .http_status_as_error(false)
@@ -154,7 +156,7 @@ impl ProviderTrait for ClaudeProvider {
 
             for item in response.content {
                 if item.content_type == "text" {
-                    println!("{}", item.text);
+                    result.push_str(&item.text);
                 }
             }
         } else {
@@ -193,7 +195,7 @@ impl ProviderTrait for ClaudeProvider {
             }
         }
 
-        Ok(())
+        Ok(result)
     }
 }
 

@@ -101,7 +101,9 @@ impl ProviderTrait for MistralProvider {
         Ok(())
     }
 
-    fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<()> {
+    fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<String> {
+        let mut result = String::new();
+
         let query = json!({
             "model": model,
             "temperature": 0.0,
@@ -148,8 +150,8 @@ impl ProviderTrait for MistralProvider {
 
         if !streaming {
             let response = response.body_mut().read_json::<MistralResponse>()?;
-            if let Some(choice) = response.choices.first() {
-                println!("{}", choice.message.content);
+            if let Some(response) = response.choices.first() {
+                result.push_str(response.message.content.as_str());
             } else {
                 println!("No response from Mistral.");
             }
@@ -183,6 +185,6 @@ impl ProviderTrait for MistralProvider {
             }
         }
 
-        Ok(())
+        Ok(result)
     }
 }

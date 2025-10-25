@@ -106,7 +106,9 @@ impl ProviderTrait for OpenAIProvider {
         Ok(())
     }
 
-    fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<()> {
+    fn query(&self, model: &str, prompt: &str, streaming: bool) -> Result<String> {
+        let mut result = String::new();
+
         let query = json!({
             "model": model,
             "messages": [
@@ -187,11 +189,11 @@ impl ProviderTrait for OpenAIProvider {
 
             for item in response.choices {
                 if item.message.role == "assistant" {
-                    println!("{}", item.message.content);
+                    result.push_str(item.message.content.as_str());
                 }
             }
         }
 
-        Ok(())
+        Ok(result)
     }
 }
