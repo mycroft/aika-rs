@@ -84,6 +84,10 @@ impl ClaudeProvider {
 }
 
 impl ProviderTrait for ClaudeProvider {
+    fn get_default_model(&self) -> String {
+        "claude-sonnet-4-5-20250929".to_string()
+    }
+
     fn list_models(&self) -> anyhow::Result<()> {
         let url = format!("{}/v1/models", self.base_url);
         let response: ModelsResponse = ureq::get(url)

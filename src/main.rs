@@ -45,8 +45,8 @@ enum Commands {
         #[arg(short, long, default_value = "git-diff-cached")]
         input: String,
 
-        /// Model to use (default: claude-3-5-sonnet-latest)
-        #[arg(short, long, default_value = "claude-3-5-sonnet-latest")]
+        /// Model to use, if empty, using default model for the provider
+        #[arg(short, long)]
         model: Option<String>,
 
         /// Prompt to use; if empty, using a generic prompt
@@ -63,7 +63,6 @@ enum Commands {
     },
 }
 
-const DEFAULT_MODEL: &str = "claude-3-5-sonnet-latest";
 const DEFAULT_PROMPT: &str = "commit-message";
 
 fn main() -> anyhow::Result<()> {
@@ -100,7 +99,7 @@ fn main() -> anyhow::Result<()> {
                 }) => (*stream, model.clone(), prompt.clone(), input.clone(), output.clone()),
                 None => (
                     false,                            // default stream
-                    Some(DEFAULT_MODEL.to_string()),  // default model
+                    None,                             // default model
                     Some(DEFAULT_PROMPT.to_string()), // default prompt
                     "git-diff-cached".to_string(),    // default input
                     "none".to_string(),               // default output
@@ -137,16 +136,13 @@ fn main() -> anyhow::Result<()> {
                 .replace("{input}", &input);
 
             let default_provider = Provider {
-                model: DEFAULT_MODEL.to_string(),
+                model: provider.get_default_model(),
             };
 
             let model = model.as_deref().unwrap_or(
-                config
-                    .providers
-                    .get("claude")
-                    .unwrap_or(&default_provider)
+                default_provider
                     .model
-                    .as_str(),
+                    .as_str()
             );
 
             let response = provider.query(model, &prompt, stream);

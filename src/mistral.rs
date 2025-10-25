@@ -86,6 +86,10 @@ impl MistralProvider {
 }
 
 impl ProviderTrait for MistralProvider {
+    fn get_default_model(&self) -> String {
+        "mistral-large-latest".to_string()
+    }
+
     fn list_models(&self) -> Result<()> {
         let response: ModelsResponse = ureq::get("https://api.mistral.ai/v1/models")
             .header("Authorization", &format!("Bearer {}", self.api_key))

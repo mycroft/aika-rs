@@ -88,6 +88,10 @@ impl OpenAIProvider {
 }
 
 impl ProviderTrait for OpenAIProvider {
+    fn get_default_model(&self) -> String {
+        "gpt-5".to_string()
+    }
+
     fn list_models(&self) -> Result<()> {
         let models = ureq::get("https://api.openai.com/v1/models")
             .header("Authorization", &format!("Bearer {}", self.api_key))
