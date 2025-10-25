@@ -43,11 +43,16 @@ pub fn create_provider(provider_name: &str, config: &Config) -> Result<Box<dyn P
 
 #[cfg(test)]
 mod tests {
-    use crate::{config::Config, provider::create_provider};
+    use crate::{config::{Config, Credentials}, provider::create_provider};
 
     #[test]
     fn test_create_anthropic_provider() {
-        let config = Config::default();
+        let mut config = Config::default();
+        config.credentials = Some(Credentials {
+            anthropic_api_key: Some("test-anthropic-key".to_string()),
+            openai_api_key: None,
+            mistral_api_key: None,
+        });
         let provider = create_provider("anthropic", &config);
         assert!(provider.is_ok());
     }
