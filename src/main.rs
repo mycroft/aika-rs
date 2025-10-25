@@ -53,6 +53,10 @@ enum Commands {
         #[arg(short, long, default_value = "commit-message")]
         prompt: Option<String>,
 
+        /// Output style
+        #[arg(short, long, default_value = "none")]
+        output: String,
+
         /// Enable streaming output
         #[arg(short, long, default_value_t = false)]
         stream: bool,
@@ -82,21 +86,24 @@ fn main() -> anyhow::Result<()> {
             model: _,
             prompt: _,
             input: _,
+            output: _,
         })
         | None => {
             // Use default values when no command is provided
-            let (stream, model, prompt, input) = match &cli.command {
+            let (stream, model, prompt, input, output) = match &cli.command {
                 Some(Commands::Query {
                     stream,
                     model,
                     prompt,
                     input,
-                }) => (*stream, model.clone(), prompt.clone(), input.clone()),
+                    output,
+                }) => (*stream, model.clone(), prompt.clone(), input.clone(), output.clone()),
                 None => (
                     false,                            // default stream
                     Some(DEFAULT_MODEL.to_string()),  // default model
                     Some(DEFAULT_PROMPT.to_string()), // default prompt
                     "git-diff-cached".to_string(),    // default input
+                    "none".to_string(),               // default output
                 ),
                 _ => unreachable!(),
             };
@@ -145,7 +152,20 @@ fn main() -> anyhow::Result<()> {
             let response = provider.query(model, &prompt, stream);
             if let Ok(response) = response {
                 if !stream {
-                    println!("{}", wrap_text(&response, 72));
+                    match output.as_str() {
+                        "json" => {
+                            let json_output = serde_json::json!({
+                                "model": model,
+                                "response": response,
+                            });
+                            println!("{}", json_output);
+                        }
+                        "wrapped" => {
+                            let wrapped_response = wrap_text(&response, 80);
+                            println!("{}", wrapped_response);
+                        }
+                        _ => println!("{}", &response),
+                    }
                 }
             } else {
                 eprintln!("Error querying provider: {}", response.unwrap_err());

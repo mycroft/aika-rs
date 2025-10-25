@@ -1,3 +1,51 @@
+pub fn wrap_paragraph(paragraph: &str, width: usize) -> String {
+    let mut result = Vec::new();
+    let mut current_line = String::new();
+
+    for word in paragraph.split_whitespace() {
+        let potential_length = if current_line.is_empty() {
+            word.len()
+        } else {
+            current_line.len() + 1 + word.len() // +1 for the space
+        };
+
+        if potential_length <= width {
+            // Word fits on current line
+            if !current_line.is_empty() {
+                current_line.push(' ');
+            }
+            current_line.push_str(word);
+        } else {
+            // Word doesn't fit, start a new line
+            if !current_line.is_empty() {
+                result.push(current_line.clone());
+                current_line.clear();
+            }
+
+            // Handle words longer than the width
+            if word.len() > width {
+                // Split the word
+                let mut remaining = word;
+                while remaining.len() > width {
+                    result.push(remaining[..width].to_string());
+                    remaining = &remaining[width..];
+                }
+                if !remaining.is_empty() {
+                    current_line = remaining.to_string();
+                }
+            } else {
+                current_line = word.to_string();
+            }
+        }
+    }
+
+    if !current_line.is_empty() {
+        result.push(current_line);
+    }
+
+    result.join("\n")
+}
+
 pub fn wrap_text(text: &str, width: usize) -> String {
     if width == 0 {
         return String::new();
@@ -5,50 +53,14 @@ pub fn wrap_text(text: &str, width: usize) -> String {
 
     let mut result = Vec::new();
 
-    for line in text.lines() {
-        let mut current_line = String::new();
-        for word in line.split_whitespace() {
-            // Check if adding this word would exceed the width
-            let potential_length = if current_line.is_empty() {
-                word.len()
-            } else {
-                current_line.len() + 1 + word.len() // +1 for the space
-            };
+    let paragraphs: Vec<&str> = text.split("\n\n").collect();
 
-            if potential_length <= width {
-                // Word fits on current line
-                if !current_line.is_empty() {
-                    current_line.push(' ');
-                }
-                current_line.push_str(word);
-            } else {
-                // Word doesn't fit, start a new line
-                if !current_line.is_empty() {
-                    result.push(current_line.clone());
-                    current_line.clear();
-                }
-
-                // Handle words longer than the width
-                if word.len() > width {
-                    // Split the word
-                    let mut remaining = word;
-                    while remaining.len() > width {
-                        result.push(remaining[..width].to_string());
-                        remaining = &remaining[width..];
-                    }
-                    if !remaining.is_empty() {
-                        current_line = remaining.to_string();
-                    }
-                } else {
-                    current_line = word.to_string();
-                }
-            }
-        }
-
-        result.push(current_line);
+    for paragraph in paragraphs {
+        let wrapped_paragraph = wrap_paragraph(paragraph, width);
+        result.push(wrapped_paragraph);
     }
 
-    result.join("\n")
+    result.join("\n\n")
 }
 
 #[cfg(test)]
@@ -90,6 +102,28 @@ mod tests {
         let text = "Some text\n\nwith multiple\n\nnew lines";
         let wrapped = wrap_text(text, 10);
         let expected = "Some text\n\nwith\nmultiple\n\nnew lines";
+        assert_eq!(wrapped, expected);
+    }
+
+    #[test]
+    fn test_wrap_paragraph() {
+        let paragraph = "This is a test paragraph to check the wrapping functionality.\nThis is a second line.";
+        let wrapped = wrap_paragraph(paragraph, 72);
+        let expected = "This is a test paragraph to check the wrapping functionality. This is a\nsecond line.";
+        assert_eq!(wrapped, expected);
+    }
+
+    #[test]
+    fn test_complete() {
+        let text = "refactor: migrate git config to new settings format\n\
+        \n\
+        The change moves git configuration from legacy format (userName, userEmail, \
+        extraConfig) to the new consolidated settings format while preserving the same functionality.";
+        let wrapped = wrap_text(text, 72);
+        let expected = "refactor: migrate git config to new settings format\n\n\
+        The change moves git configuration from legacy format (userName,\n\
+        userEmail, extraConfig) to the new consolidated settings format while\n\
+        preserving the same functionality.";
         assert_eq!(wrapped, expected);
     }
 }
