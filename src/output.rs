@@ -4,7 +4,7 @@ pub fn wrap_text(text: &str, width: usize) -> String {
     }
 
     let mut result = Vec::new();
-    
+
     for line in text.lines() {
         let mut current_line = String::new();
         for word in line.split_whitespace() {
@@ -14,7 +14,7 @@ pub fn wrap_text(text: &str, width: usize) -> String {
             } else {
                 current_line.len() + 1 + word.len() // +1 for the space
             };
-            
+
             if potential_length <= width {
                 // Word fits on current line
                 if !current_line.is_empty() {
@@ -27,7 +27,7 @@ pub fn wrap_text(text: &str, width: usize) -> String {
                     result.push(current_line.clone());
                     current_line.clear();
                 }
-                
+
                 // Handle words longer than the width
                 if word.len() > width {
                     // Split the word
@@ -44,7 +44,7 @@ pub fn wrap_text(text: &str, width: usize) -> String {
                 }
             }
         }
-        
+
         result.push(current_line);
     }
 
