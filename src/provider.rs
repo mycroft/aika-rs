@@ -27,7 +27,7 @@ use anyhow::Result;
 use crate::config::Config;
 
 pub trait Provider {
-    fn get_default_model(&self) -> String;
+    fn model(&self) -> String;
     fn list_models(&self) -> Result<()>;
     fn query(&self, message: &str, model: &str, streaming: bool) -> Result<String>;
 }

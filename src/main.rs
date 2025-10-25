@@ -96,7 +96,13 @@ fn main() -> anyhow::Result<()> {
                     prompt,
                     input,
                     output,
-                }) => (*stream, model.clone(), prompt.clone(), input.clone(), output.clone()),
+                }) => (
+                    *stream,
+                    model.clone(),
+                    prompt.clone(),
+                    input.clone(),
+                    output.clone(),
+                ),
                 None => (
                     false,                            // default stream
                     None,                             // default model
@@ -136,14 +142,10 @@ fn main() -> anyhow::Result<()> {
                 .replace("{input}", &input);
 
             let default_provider = Provider {
-                model: provider.get_default_model(),
+                model: provider.model(),
             };
 
-            let model = model.as_deref().unwrap_or(
-                default_provider
-                    .model
-                    .as_str()
-            );
+            let model = model.as_deref().unwrap_or(default_provider.model.as_str());
 
             let response = provider.query(model, &prompt, stream);
             if let Ok(response) = response {

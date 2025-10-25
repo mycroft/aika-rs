@@ -107,9 +107,11 @@ mod tests {
 
     #[test]
     fn test_wrap_paragraph() {
-        let paragraph = "This is a test paragraph to check the wrapping functionality.\nThis is a second line.";
+        let paragraph =
+            "This is a test paragraph to check the wrapping functionality.\nThis is a second line.";
         let wrapped = wrap_paragraph(paragraph, 72);
-        let expected = "This is a test paragraph to check the wrapping functionality. This is a\nsecond line.";
+        let expected =
+            "This is a test paragraph to check the wrapping functionality. This is a\nsecond line.";
         assert_eq!(wrapped, expected);
     }
 

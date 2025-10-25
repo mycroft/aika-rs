@@ -8,6 +8,7 @@ use crate::{config::Config, provider::Provider as ProviderTrait};
 
 pub struct MistralProvider {
     api_key: String,
+    model: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,6 +67,8 @@ struct MistralStreamResponse {
     model: String,
 }
 
+const DEFAULT_MODEL: &str = "mistral-large-latest";
+
 impl MistralProvider {
     pub fn new(config: &Config) -> Result<Self> {
         let api_key: String = std::env::var("MISTRAL_API_KEY")
@@ -81,13 +84,20 @@ impl MistralProvider {
                     "MISTRAL_API_KEY environment variable is not set and no API key found in config"
                 )
             })?;
-        Ok(Self { api_key })
+
+            let model = config
+            .providers
+            .get("mistral")
+            .map(|provider| provider.model.clone())
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+
+        Ok(Self { api_key, model })
     }
 }
 
 impl ProviderTrait for MistralProvider {
-    fn get_default_model(&self) -> String {
-        "mistral-large-latest".to_string()
+    fn model(&self) -> String {
+        self.model.clone()
     }
 
     fn list_models(&self) -> Result<()> {

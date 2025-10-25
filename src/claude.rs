@@ -64,7 +64,10 @@ struct ClaudeContentDelta {
 pub struct ClaudeProvider {
     api_key: String,
     base_url: String,
+    model: String,
 }
+
+const DEFAULT_MODEL: &str = "claude-sonnet-4-5-20250929";
 
 impl ClaudeProvider {
     pub fn new(config: &Config) -> anyhow::Result<Self> {
@@ -76,16 +79,24 @@ impl ClaudeProvider {
                     .ok_or(std::env::VarError::NotPresent)
             })
             .map_err(|_| anyhow::anyhow!("ANTHROPIC_API_KEY environment variable is not set and no API key found in config"))?;
+
+        let model = config
+            .providers
+            .get("anthropic")
+            .map(|provider| provider.model.clone())
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+    
         Ok(Self {
             api_key,
             base_url: "https://api.anthropic.com".into(),
+            model,
         })
     }
 }
 
 impl ProviderTrait for ClaudeProvider {
-    fn get_default_model(&self) -> String {
-        "claude-sonnet-4-5-20250929".to_string()
+    fn model(&self) -> String {
+        self.model.clone()
     }
 
     fn list_models(&self) -> anyhow::Result<()> {
@@ -232,9 +243,10 @@ mod tests {
         let provider = ClaudeProvider {
             api_key: "test-key".to_string(),
             base_url: server.url(), // Point to mock server
+            model: DEFAULT_MODEL.to_string(),
         };
 
-        let result = provider.query("test input", "claude-3-5-sonnet-latest", false);
+        let result = provider.query("test input", DEFAULT_MODEL, false);
 
         mock.assert();
         assert!(result.is_ok());
@@ -253,9 +265,10 @@ mod tests {
         let provider = ClaudeProvider {
             api_key: "bad-key".to_string(),
             base_url: server.url(),
+            model: DEFAULT_MODEL.to_string(),
         };
 
-        let result = provider.query("test", "model", false);
+        let result = provider.query("test", DEFAULT_MODEL, false);
 
         mock.assert();
         assert!(result.is_err());
@@ -276,9 +289,10 @@ mod tests {
         let provider = ClaudeProvider {
             api_key: "test-key".to_string(),
             base_url: server.url(),
+            model: DEFAULT_MODEL.to_string(),
         };
 
-        let result = provider.query("test", "model", true);
+        let result = provider.query("test", DEFAULT_MODEL, true);
 
         mock.assert();
         assert!(result.is_ok());

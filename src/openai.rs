@@ -66,7 +66,10 @@ struct OpenAIStreamResponse {
 
 pub struct OpenAIProvider {
     api_key: String,
+    model: String,
 }
+
+const DEFAULT_MODEL: &str = "gpt-5";
 
 impl OpenAIProvider {
     pub fn new(config: &Config) -> Result<Self> {
@@ -83,13 +86,20 @@ impl OpenAIProvider {
                     "OPENAI_API_KEY environment variable is not set and no API key found in config"
                 )
             })?;
-        Ok(Self { api_key })
+
+        let model = config
+            .providers
+            .get("openai")
+            .map(|provider| provider.model.clone())
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+
+        Ok(Self { api_key, model })
     }
 }
 
 impl ProviderTrait for OpenAIProvider {
-    fn get_default_model(&self) -> String {
-        "gpt-5".to_string()
+    fn model(&self) -> String {
+        self.model.clone()
     }
 
     fn list_models(&self) -> Result<()> {
