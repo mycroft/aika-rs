@@ -34,8 +34,8 @@ pub struct Config {
     pub prompts: HashMap<String, Prompt>,
 }
 
-impl Config {
-    pub fn default() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         get_default_config()
     }
 }
