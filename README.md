@@ -2,15 +2,18 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A command-line tool that leverages Anthropic's Claude AI models to generate git commit messages and process text-based outputs. Built in Rust, aika-rs provides a seamless interface for interacting with Claude AI from your terminal.
+A command-line tool that leverages multiple AI providers (Anthropic Claude, OpenAI, Mistral) to generate git commit messages, code reviews, and process text-based outputs. Built in Rust, aika-rs provides a seamless interface for interacting with AI models from your terminal.
 
 ## Features
 
-- 🤖 Generate AI-powered commit messages from git diffs
-- 📋 List available Claude AI models
+- 🤖 Multiple AI provider support (Anthropic Claude, OpenAI, Mistral)
+- 📝 Generate AI-powered commit messages from git diffs
+- 🔍 Code review generation with specialized Rust review support
+- 📋 List available models for each provider
 - 🔧 Flexible input sources (files, directories, commands)
-- 📝 Customizable prompts via TOML configuration
+- 💬 Multiple prompt templates (commit messages, code reviews, README generation)
 - 🔄 Support for streaming responses
+- 📦 Text wrapping with paragraph support
 - 🎯 Debug mode for detailed execution information
 
 ## Installation
@@ -18,7 +21,10 @@ A command-line tool that leverages Anthropic's Claude AI models to generate git 
 ### Prerequisites
 
 - Rust toolchain (1.56 or later)
-- Anthropic API key
+- API key for at least one supported provider:
+  - Anthropic API key (for Claude models)
+  - OpenAI API key (for GPT models)
+  - Mistral API key (for Mistral models)
 - Git (for commit message generation)
 
 ### Building from Source
@@ -36,26 +42,58 @@ The binary will be available at `target/release/aika`
 Create a configuration file at `~/.config/aika-rs/config.toml` (or specify custom location with `--config`):
 
 ```toml
+[credentials]
+anthropic_api_key = "your_anthropic_api_key"
+openai_api_key = "your_openai_api_key"
+mistral_api_key = "your_mistral_api_key"
+
 [providers.claude]
-model = "claude-3-5-sonnet-latest"
+model = "claude-sonnet-3-latest"
 
 [inputs.git-diff-cached]
 command = "git diff --cached"
 
+[inputs.git-diff]
+command = "git diff"
+
 [prompts.commit-message]
-prompt = "Generate a concise and descriptive git commit message for the following changes:\n\n```\n{input}\n```"
+prompt = """
+Generate a concise and descriptive git commit message for the following changes:
+- Use conventional commit style (type: short summary)
+- Start with a lowercase imperative verb
+- Keep the summary under 72 characters
+
+{input}
+"""
+
+[prompts.review]
+prompt = "Review the following code changes and provide feedback on correctness, readability, security, and performance.\n\n{input}"
+
+[prompts.review-rust]
+prompt = "As a senior Rust engineer, review the following code changes with focus on idiomatic Rust, ownership/borrowing, and safety.\n\n{input}"
 ```
+
+See `contrib/config.toml` for a complete example configuration.
 
 ### Environment Variables
 
-- `ANTHROPIC_API_KEY`: Your Anthropic API key (required)
+You can also set API keys via environment variables:
+
+- `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `OPENAI_API_KEY`: Your OpenAI API key
+- `MISTRAL_API_KEY`: Your Mistral API key
 
 ## Usage
 
 ### List Available Models
 
 ```bash
+# List models for default provider (Claude)
 aika list-models
+
+# List models for specific provider
+aika list-models --provider openai
+aika list-models --provider mistral
 ```
 
 ### Generate Commit Message
@@ -73,11 +111,29 @@ aika query --input "dir:src"
 # Using a specific model
 aika query --model "claude-3-5-opus-latest"
 
+# Using a specific provider
+aika query --provider openai
+
 # Using a custom prompt
-aika query --prompt "custom-prompt-name"
+aika query --prompt "commit-message"
 ```
 
-Enable streaming output:
+### Code Review
+
+```bash
+# Review changes with default prompt
+aika query --prompt review
+
+# Rust-specific code review
+aika query --prompt review-rust
+
+# Review specific git diff
+aika query --input "cmd:git diff HEAD~1" --prompt review
+```
+
+### Streaming Output
+
+Enable streaming for real-time responses:
 ```bash
 aika query --stream
 ```
@@ -100,17 +156,16 @@ aika query --debug
 
 ## Dependencies
 
-- [Anthropic's Claude API](https://anthropic.com/) - AI model provider
+- AI Provider APIs:
+  - [Anthropic Claude API](https://anthropic.com/) - Claude models
+  - [OpenAI API](https://openai.com/) - GPT models
+  - [Mistral API](https://mistral.ai/) - Mistral models
 - [clap](https://github.com/clap-rs/clap) - Command line argument parsing
 - [ureq](https://github.com/algesten/ureq) - HTTP client
+- [serde](https://github.com/serde-rs/serde) - Serialization framework
+- [toml](https://github.com/toml-rs/toml) - Configuration file parsing
 - Additional dependencies can be found in `Cargo.toml`
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built with [Anthropic's Claude API](https://anthropic.com/)
-- Uses [clap](https://github.com/clap-rs/clap) for CLI argument parsing
-- Uses [ureq](https://github.com/algesten/ureq) for HTTP requests
