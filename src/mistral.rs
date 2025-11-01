@@ -85,7 +85,7 @@ impl MistralProvider {
                 )
             })?;
 
-            let model = config
+        let model = config
             .providers
             .get("mistral")
             .map(|provider| provider.model.clone())

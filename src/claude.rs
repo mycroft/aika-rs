@@ -85,7 +85,7 @@ impl ClaudeProvider {
             .get("anthropic")
             .map(|provider| provider.model.clone())
             .unwrap_or_else(|| DEFAULT_MODEL.to_string());
-    
+
         Ok(Self {
             api_key,
             base_url: "https://api.anthropic.com".into(),
