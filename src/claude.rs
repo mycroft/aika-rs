@@ -70,6 +70,8 @@ pub struct ClaudeProvider {
 const DEFAULT_MODEL: &str = "claude-sonnet-4-5-20250929";
 
 impl ClaudeProvider {
+    pub const PROVIDER_NAME: &str = "anthropic";
+
     pub fn new(config: &Config) -> anyhow::Result<Self> {
         let api_key: String = std::env::var("ANTHROPIC_API_KEY")
             .or_else(|_| {
@@ -97,6 +99,10 @@ impl ClaudeProvider {
 impl ProviderTrait for ClaudeProvider {
     fn model(&self) -> String {
         self.model.clone()
+    }
+
+    fn name(&self) -> String {
+        ClaudeProvider::PROVIDER_NAME.to_string()
     }
 
     fn list_models(&self) -> anyhow::Result<()> {

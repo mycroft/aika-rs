@@ -72,6 +72,8 @@ pub struct OpenAIProvider {
 const DEFAULT_MODEL: &str = "gpt-5";
 
 impl OpenAIProvider {
+    pub const PROVIDER_NAME: &str = "openai";
+
     pub fn new(config: &Config) -> Result<Self> {
         let api_key: String = std::env::var("OPENAI_API_KEY")
             .or_else(|_| {
@@ -100,6 +102,10 @@ impl OpenAIProvider {
 impl ProviderTrait for OpenAIProvider {
     fn model(&self) -> String {
         self.model.clone()
+    }
+
+    fn name(&self) -> String {
+        OpenAIProvider::PROVIDER_NAME.to_string()
     }
 
     fn list_models(&self) -> Result<()> {

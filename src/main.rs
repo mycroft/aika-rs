@@ -19,6 +19,9 @@ use crate::input::{Input, from_config, get_input};
 pub mod output;
 use crate::output::wrap_text;
 
+pub mod repl;
+use crate::repl::run_repl;
+
 #[derive(Parser)]
 #[command(name = "aika")]
 #[command(about = "A tool to use Claude AI from the command line", long_about = None)]
@@ -61,6 +64,11 @@ enum Commands {
         #[arg(short, long, default_value_t = false)]
         stream: bool,
     },
+    Repl {
+        /// Model to use in REPL; if empty, using default model for the provider
+        #[arg(short, long)]
+        model: Option<String>,
+    },
 }
 
 const DEFAULT_PROMPT: &str = "commit-message";
@@ -80,6 +88,7 @@ fn main() -> anyhow::Result<()> {
 
     match &cli.command {
         Some(Commands::ListModels) => provider.list_models(),
+        Some(Commands::Repl { model }) => run_repl(provider, model.clone(), cli.debug),
         Some(Commands::Query {
             stream: _,
             model: _,

@@ -70,6 +70,8 @@ struct MistralStreamResponse {
 const DEFAULT_MODEL: &str = "mistral-large-latest";
 
 impl MistralProvider {
+    pub const PROVIDER_NAME: &str = "mistral";
+
     pub fn new(config: &Config) -> Result<Self> {
         let api_key: String = std::env::var("MISTRAL_API_KEY")
             .or_else(|_| {
@@ -98,6 +100,10 @@ impl MistralProvider {
 impl ProviderTrait for MistralProvider {
     fn model(&self) -> String {
         self.model.clone()
+    }
+
+    fn name(&self) -> String {
+        MistralProvider::PROVIDER_NAME.to_string()
     }
 
     fn list_models(&self) -> Result<()> {
