@@ -24,8 +24,8 @@
 
 use anyhow::Result;
 
-use crate::config::Config;
 use crate::claude::ClaudeProvider;
+use crate::config::Config;
 
 pub trait Provider {
     fn model(&self) -> String;

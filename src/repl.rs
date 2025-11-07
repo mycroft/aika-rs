@@ -4,13 +4,9 @@ use rustyline::error::ReadlineError;
 
 use crate::provider::Provider;
 
-pub fn run_repl(
-    provider: Box<dyn Provider>,
-    model: Option<String>,
-    debug: bool,
-) -> Result<()> {
+pub fn run_repl(provider: Box<dyn Provider>, model: Option<String>, debug: bool) -> Result<()> {
     let mut rl = DefaultEditor::new()?;
-    
+
     let model_name = model.as_deref().unwrap_or(&provider.model()).to_string();
 
     println!("Aika REPL - Interactive mode");
